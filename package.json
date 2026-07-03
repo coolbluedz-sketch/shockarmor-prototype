@@ -1,0 +1,21 @@
+{
+  "name": "shockarmor-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Boutique anti-choc (COD) trilingue FR/EN/AR — monorepo : apps boutique + admin, package partagé, backend Supabase + images Cloudinary. Voir CLAUDE.md.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:boutique": "npm run dev -w @shockarmor/boutique",
+    "dev:admin": "npm run dev -w @shockarmor/admin",
+    "build": "npm run build -w @shockarmor/boutique && npm run build -w @shockarmor/admin",
+    "build:boutique": "npm run build -w @shockarmor/boutique",
+    "build:admin": "npm run build -w @shockarmor/admin",
+    "test:cloudinary": "node scripts/test-cloudinary.mjs"
+  },
+  "devDependencies": {
+    "supabase": "^2.109.0"
+  }
+}

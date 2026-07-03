@@ -1,0 +1,5 @@
+/* Reset minimal. Tout le style de l'app est injecté par le composant (bloc <style>
+   scoping sous la classe .bx dans App.jsx). */
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+body { background: #F6F9FC; -webkit-font-smoothing: antialiased; }

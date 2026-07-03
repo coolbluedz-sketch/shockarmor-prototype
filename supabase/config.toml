@@ -1,0 +1,14 @@
+# Config Supabase (versionnée). Fusionnée avec les valeurs par défaut de la CLI.
+# project_id = identifiant LOCAL du projet (pas la référence du projet distant).
+project_id = "shockarmor"
+
+# Épingle la vérification JWT au niveau de la passerelle pour l'Edge Function :
+# garantit que le réglage est reproductible/auditable, indépendamment des flags
+# passés à `supabase functions deploy`.
+[functions.cloudinary-sign]
+verify_jwt = true
+
+# notify-order est appelée par un Database Webhook (pas de JWT utilisateur) :
+# on désactive verify_jwt et on protège via le secret ORDER_WEBHOOK_SECRET.
+[functions.notify-order]
+verify_jwt = false
