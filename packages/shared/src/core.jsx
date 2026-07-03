@@ -238,12 +238,12 @@ function Logo({ variant="light", size=34, wordmark=true }) {
   const ink = variant==="dark" ? "#FFFFFF" : C.ink;
   return (
     <span className="bx-logo2">
-      <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
+      {/* <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
         <rect width="40" height="40" rx="12" fill={C.amber}/>
         <path d="M20 7.5 L30.5 11.5 V20 C30.5 27.2 20 32.5 20 32.5 C20 32.5 9.5 27.2 9.5 20 V11.5 Z" fill="#fff"/>
         <path d="M21.6 12.6 L15 22 H19 L17.4 28.6 L25 18.4 H20.4 Z" fill={C.cobalt}/>
-      </svg>
-      {wordmark && <span className="wm" style={{color:ink}}>cool blue<span style={{color:C.cobalt}}> DZ</span></span>}
+      </svg> */}
+      {wordmark && <span className="wm" style={{color:ink}}>Cool Blue<span style={{color:C.cobalt}}> DZ</span></span>}
     </span>
   );
 }
