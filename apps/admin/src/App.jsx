@@ -13,7 +13,6 @@ export default function App() {
   const [fees, setFees] = useState(() => {
     const m = {}; WILAYAS.forEach(w => m[w.code] = { ...ZONE_FEE[w.zone] }); return m;
   });
-  const [waNumber, setWaNumber] = useState("213555123456");
 
   // Chargement depuis Supabase (si configuré) ; sinon seeds en mémoire.
   useEffect(() => {
@@ -53,7 +52,7 @@ export default function App() {
           </div>
         </div>
       </div>
-      <Admin {...{ t, lang, rtl, cats, setCats, products, setProducts, orders, setOrders, fees, setFees, waNumber, setWaNumber }} />
+      <Admin {...{ t, lang, rtl, cats, setCats, products, setProducts, orders, setOrders, fees, setFees }} />
     </div>
   );
 }

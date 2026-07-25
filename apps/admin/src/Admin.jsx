@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { ShoppingCart, Plus, Minus, Trash2, Search, X, Shield, Zap, Truck, CheckCircle, Package, LayoutDashboard, Tags, ClipboardList, Users, MapPin, LogOut, Menu, Globe, MessageCircle, Store, ChevronRight, ChevronLeft, Edit, Phone } from "lucide-react";
-import { C, T, WILAYAS, fmt, waLink, STATUS, STATUS_COLOR, ProductArt, ProductVisual, Logo, catArt, api, supabase, isSupabaseConfigured, ImageUploader } from "@shared";
+import { ShoppingCart, Plus, Minus, Trash2, Search, X, Shield, Zap, Truck, CheckCircle, Package, LayoutDashboard, Tags, ClipboardList, Users, MapPin, LogOut, Menu, Globe, Store, ChevronRight, ChevronLeft, Edit, Phone } from "lucide-react";
+import { C, T, WILAYAS, fmt, STATUS, STATUS_COLOR, ProductArt, ProductVisual, Logo, catArt, api, supabase, isSupabaseConfigured, ImageUploader } from "@shared";
 
 function Admin(props) {
   const { t } = props;
@@ -74,7 +74,7 @@ function Login({ t, onSubmit, demo }) {
   );
 }
 
-function AdminShell({ t, lang, cats, setCats, products, setProducts, orders, setOrders, fees, setFees, waNumber, setWaNumber, onLogout }) {
+function AdminShell({ t, lang, cats, setCats, products, setProducts, orders, setOrders, fees, setFees, onLogout }) {
   const L = (o) => o[lang] || o.fr;
   const [tab, setTab] = useState("dash");
   const newCount = orders.filter(o=>o.status==="new").length;
@@ -98,7 +98,7 @@ function AdminShell({ t, lang, cats, setCats, products, setProducts, orders, set
         </div>
       </aside>
       <main className="bx-main">
-        {tab==="dash" && <Dashboard {...{t,lang,products,orders,waNumber,setWaNumber,setTab}}/>}
+        {tab==="dash" && <Dashboard {...{t,lang,products,orders,setTab}}/>}
         {tab==="products" && <ProductsAdmin {...{t,L,lang,products,setProducts,cats}}/>}
         {tab==="cats" && <CatsAdmin {...{t,L,cats,setCats,products}}/>}
         {tab==="orders" && <OrdersAdmin {...{t,lang,orders,setOrders,setProducts}}/>}
@@ -113,13 +113,7 @@ function StatusPill({ status, t }) {
   return <span className="bx-pill" style={{background:STATUS_COLOR[status]}}>{t["st_"+status]}</span>;
 }
 
-function waMsg(o, lang, t){
-  const lines = o.items.map(i=>`• ${i.name} x${i.qty}`).join("\n");
-  const w = WILAYAS.find(x=>x.code===o.wilaya);
-  return `🛡️ ShockArmor — ${t.orderNo}: ${o.no}\n${o.name} — ${o.phone}\n${w?w.name:""}, ${o.commune}\n${o.address}\n${lines}\n${t.total}: ${fmt(o.total,lang)} (COD)`;
-}
-
-function Dashboard({ t, lang, products, orders, waNumber, setWaNumber, setTab }) {
+function Dashboard({ t, lang, products, orders, setTab }) {
   const revenue = orders.filter(o=>o.status==="delivered").reduce((s,o)=>s+o.total,0);
   const newOrders = orders.filter(o=>o.status==="new");
   const stockOut = products.filter(p=>p.stock<=0).length;
@@ -141,37 +135,18 @@ function Dashboard({ t, lang, products, orders, waNumber, setWaNumber, setTab })
         ))}
       </div>
 
-      <div className="bx-dash2">
-        <div className="bx-card" style={{padding:18}}>
-          <h3 style={{fontSize:15,marginBottom:16}}>{t.ordersByStatus}</h3>
-          {counts.map(c=>(
-            <div key={c.s} style={{marginBottom:12}}>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:5}}>
-                <span>{t["st_"+c.s]}</span><span className="mono" style={{fontWeight:700}}>{c.n}</span>
-              </div>
-              <div style={{background:C.mist,borderRadius:6,height:10}}>
-                <div className="bx-bar" style={{width:`${(c.n/maxN)*100}%`,background:STATUS_COLOR[c.s],minWidth:c.n?6:0}}/>
-              </div>
+      <div className="bx-card" style={{padding:18,marginBottom:22}}>
+        <h3 style={{fontSize:15,marginBottom:16}}>{t.ordersByStatus}</h3>
+        {counts.map(c=>(
+          <div key={c.s} style={{marginBottom:12}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:5}}>
+              <span>{t["st_"+c.s]}</span><span className="mono" style={{fontWeight:700}}>{c.n}</span>
             </div>
-          ))}
-        </div>
-        <div className="bx-card" style={{padding:18}}>
-          <h3 style={{fontSize:15,marginBottom:6,display:"flex",alignItems:"center",gap:8}}><MessageCircle size={17} color={C.green}/>{t.notifyWa}</h3>
-          <label className="bx-label" style={{marginTop:8}}>{t.waNumber}</label>
-          <input className="bx-input mono" value={waNumber} onChange={e=>setWaNumber(e.target.value)}/>
-          <div style={{marginTop:14}}>
-            {newOrders.length===0
-              ? <p style={{fontSize:13,color:C.muted}}>—</p>
-              : newOrders.slice(0,3).map(o=>(
-                <div key={o.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderTop:`1px solid ${C.line}`}}>
-                  <div style={{fontSize:13}}><b className="mono">{o.no}</b> · {o.name}</div>
-                  <a className="bx-btn bx-cobalt" style={{padding:"7px 12px"}} target="_blank" rel="noreferrer"
-                     href={waLink(waNumber, waMsg(o,lang,t))}><MessageCircle size={14}/></a>
-                </div>
-              ))
-            }
+            <div style={{background:C.mist,borderRadius:6,height:10}}>
+              <div className="bx-bar" style={{width:`${(c.n/maxN)*100}%`,background:STATUS_COLOR[c.s],minWidth:c.n?6:0}}/>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
 
       <div className="bx-card" style={{overflow:"hidden"}}>
