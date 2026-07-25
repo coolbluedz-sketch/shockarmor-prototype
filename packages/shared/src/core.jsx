@@ -72,6 +72,29 @@ const SEED_PRODUCTS = [
   { id:"p9", cat:"c1", sku:"MAG-ASK", price:3100, was:null, stock:0, drop:2.6, rating:4.8, hot:false, brand:"Armorix", model:"AX-Mag",
     fr:"Coque MagSafe Antichoc", en:"MagSafe Shock case", ar:"غطاء ماغ سايف مضاد للصدمات",
     dFr:"Compatible MagSafe, aimants intégrés.", dEn:"MagSafe compatible, built-in magnets.", dAr:"متوافق مع ماغ سايف، مغناطيس مدمج." },
+  // Exemple de produit CONFIGURABLE (marque → modèle → couleur).
+  { id:"p10", cat:"c1", sku:"DEMO-FLEX", price:1990, was:2600, stock:50, drop:2.4, rating:4.9, hot:true, brand:"Armorix", model:"AX-Flex",
+    fr:"Coque Flex Multi-Modèles", en:"Flex Multi-Model Case", ar:"غطاء فليكس متعدد الموديلات",
+    dFr:"Coque antichoc compatible avec de nombreux modèles. Choisissez votre téléphone puis votre couleur.",
+    dEn:"Shockproof case compatible with many phone models. Pick your phone then your color.",
+    dAr:"غطاء مضاد للصدمات متوافق مع عدة موديلات. اختر هاتفك ثم لونك.",
+    // Couleurs rattachées à CHAQUE modèle (chaque modèle peut avoir sa propre gamme de couleurs).
+    compat:[
+      { brand:"Samsung", models:[
+        { name:"Galaxy S23", colors:[{name:"Noir",hex:"#111827",url:"",publicId:""},{name:"Bleu",hex:"#1E5FD0",url:"",publicId:""}] },
+        { name:"Galaxy S24", colors:[{name:"Noir",hex:"#111827",url:"",publicId:""},{name:"Vert",hex:"#14B86A",url:"",publicId:""}] },
+        { name:"Galaxy A54", colors:[] },
+      ]},
+      { brand:"iPhone", models:[
+        { name:"iPhone 15", colors:[{name:"Noir",hex:"#111827",url:"",publicId:""},{name:"Bleu",hex:"#1E5FD0",url:"",publicId:""},{name:"Rouge",hex:"#E0342B",url:"",publicId:""}] },
+        { name:"iPhone 15 Pro", colors:[{name:"Titane",hex:"#8A8D8F",url:"",publicId:""},{name:"Noir",hex:"#111827",url:"",publicId:""}] },
+      ]},
+      { brand:"Xiaomi", models:[
+        { name:"Redmi Note 13", colors:[] },
+        { name:"13T Pro", colors:[] },
+      ]},
+    ],
+    colors:[] },
 ];
 
 /* ---------- Seed commandes ---------- */
@@ -99,6 +122,7 @@ const T = {
     shopNow:"Voir les produits", trustCod:"Paiement à la livraison", trustDelivery:"Livraison 58 wilayas",
     trustWarranty:"Garantie 6 mois", categories:"Nos gammes", featured:"Meilleures ventes", all:"Tout",
     addToCart:"Ajouter au panier", buyNow:"Acheter", outOfStock:"Rupture de stock", inStock:"En stock", dropTest:"Testé chute",
+    optBrand:"Marque du téléphone", optModel:"Modèle", optColor:"Couleur", chooseBrand:"Choisir la marque", chooseModel:"Choisir le modèle", chooseOptions:"Choisissez la marque, le modèle et la couleur", compatLabel:"Compatibilité (marques & modèles)", colorsLabel:"Couleurs disponibles",
     qty:"Quantité", specs:"Caractéristiques", emptyCart:"Votre panier est vide", subtotal:"Sous-total",
     delivery:"Livraison", total:"Total", checkout:"Passer la commande", continue:"Continuer mes achats",
     yourInfo:"Vos informations", fullName:"Nom complet", phone:"Téléphone", wilaya:"Wilaya", commune:"Commune",
@@ -126,6 +150,7 @@ const T = {
     shopNow:"Shop products", trustCod:"Cash on delivery", trustDelivery:"Delivery to 58 wilayas",
     trustWarranty:"6-month warranty", categories:"Categories", featured:"Best sellers", all:"All",
     addToCart:"Add to cart", buyNow:"Buy now", outOfStock:"Out of stock", inStock:"In stock", dropTest:"Drop tested",
+    optBrand:"Phone brand", optModel:"Model", optColor:"Color", chooseBrand:"Choose brand", chooseModel:"Choose model", chooseOptions:"Select brand, model and color", compatLabel:"Compatibility (brands & models)", colorsLabel:"Available colors",
     qty:"Quantity", specs:"Specs", emptyCart:"Your cart is empty", subtotal:"Subtotal",
     delivery:"Delivery", total:"Total", checkout:"Checkout", continue:"Continue shopping",
     yourInfo:"Your information", fullName:"Full name", phone:"Phone", wilaya:"Wilaya", commune:"Town",
@@ -153,6 +178,7 @@ const T = {
     shopNow:"تصفّح المنتجات", trustCod:"الدفع عند الاستلام", trustDelivery:"توصيل لـ 58 ولاية",
     trustWarranty:"ضمان 6 أشهر", categories:"التصنيفات", featured:"الأكثر مبيعًا", all:"الكل",
     addToCart:"أضف إلى السلة", buyNow:"شراء الآن", outOfStock:"نفد المخزون", inStock:"متوفر", dropTest:"اختبار السقوط",
+    optBrand:"ماركة الهاتف", optModel:"الموديل", optColor:"اللون", chooseBrand:"اختر الماركة", chooseModel:"اختر الموديل", chooseOptions:"اختر الماركة والموديل واللون", compatLabel:"التوافق (ماركات وموديلات)", colorsLabel:"الألوان المتوفرة",
     qty:"الكمية", specs:"المواصفات", emptyCart:"سلتك فارغة", subtotal:"المجموع الفرعي",
     delivery:"التوصيل", total:"الإجمالي", checkout:"إتمام الطلب", continue:"متابعة التسوق",
     yourInfo:"معلوماتك", fullName:"الاسم الكامل", phone:"الهاتف", wilaya:"الولاية", commune:"البلدية",
@@ -387,9 +413,10 @@ const CSS = `
 /* overlay/drawer/modal */
 .bx-overlay{position:fixed;inset:0;background:rgba(15,34,51,.45);z-index:50;display:flex;}
 .bx-drawer{margin-inline-start:auto;width:min(440px,100%);background:#fff;height:100%;display:flex;flex-direction:column;}
-.bx-modal{margin:auto;width:min(640px,94%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;}
+.bx-modal{margin:auto;width:min(640px,94%);max-height:92vh;overflow-y:auto;overflow-x:hidden;background:#fff;border-radius:22px;}
 .bx-modal.sm{width:min(470px,94%);}
 .bx-prodmodal{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.bx-prodmodal>div{min-width:0;}
 .bx-dh{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line);}
 .bx-dh h3{font-size:17px;}
 .bx-x{background:var(--mist);border-radius:10px;width:36px;height:36px;display:grid;place-items:center;color:var(--inkSoft);transition:.15s;}

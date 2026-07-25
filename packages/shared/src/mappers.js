@@ -30,6 +30,25 @@ export const normImages = (raw) => {
     .filter((x) => x && x.url);
 };
 
+// Normalise une liste de couleurs (globale OU rattachée à un modèle) :
+// garde les entrées ayant au moins un nom ou une url.
+export const normColors = (raw) =>
+  (Array.isArray(raw) ? raw : []).filter((c) => c && typeof c === "object" && (c.name || c.url));
+
+// Normalise la compatibilité : marque → modèles → couleurs.
+// Rétrocompat : un modèle stocké en simple chaîne ("Galaxy S22") est converti
+// en objet { name:"Galaxy S22", colors:[] } (ancien format sans couleurs par modèle).
+export const normCompat = (raw) =>
+  (Array.isArray(raw) ? raw : [])
+    .filter((c) => c && typeof c === "object" && c.brand)
+    .map((c) => ({
+      brand: c.brand,
+      models: (Array.isArray(c.models) ? c.models : [])
+        .map((m) => (typeof m === "string" ? { name: m, colors: [] } : m))
+        .filter((m) => m && typeof m === "object" && m.name)
+        .map((m) => ({ name: m.name, colors: normColors(m.colors) })),
+    }));
+
 export const productFromDb = (r) => ({
   id: r.id,
   cat: r.category_id,
@@ -45,6 +64,9 @@ export const productFromDb = (r) => ({
   hot: !!r.featured,
   active: r.active,
   images: normImages(r.images),
+  // Variantes : compatibilité (marque→modèles→couleurs) + couleurs globales de repli.
+  compat: normCompat(r.compat),
+  colors: normColors(r.colors),
 });
 export const productToDb = (p) => ({
   category_id: p.cat || null,
@@ -60,6 +82,8 @@ export const productToDb = (p) => ({
   featured: !!p.hot,
   active: p.active ?? true,
   images: Array.isArray(p.images) ? p.images : [],
+  compat: Array.isArray(p.compat) ? p.compat : [],
+  colors: Array.isArray(p.colors) ? p.colors : [],
 });
 
 /* ---------- Commandes ---------- */

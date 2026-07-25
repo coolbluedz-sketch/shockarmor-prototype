@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: { port: 5174 }, // admin (port distinct → boutique + admin en parallèle)
   // .env(.local) est à la racine du repo, partagé par les deux apps.
   envDir: fileURLToPath(new URL("../../", import.meta.url)),
   resolve: {

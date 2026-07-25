@@ -129,6 +129,16 @@ Voir `docs/supabase-schema.sql` pour le schéma SQL complet. Résumé des entit�
   `public_id` : `products.images` est donc une colonne **`jsonb`** = `[{ url, publicId }]`
   (et non `text[]`). Si le schéma a été appliqué avant ce changement, exécuter
   `docs/supabase-migration-01-images-jsonb.sql`.
+  ⚠️ **Variantes** (migration 03) : un produit est configurable par le client. Les couleurs
+  sont rattachées à **chaque modèle** :
+  `compat` (jsonb `[{brand, models:[{name, colors:[{name,hex,url,publicId}]}]}]`) porte les
+  marques → modèles → couleurs ; `colors` (jsonb `[{name,hex,url,publicId}]`) est une liste
+  **globale de repli**, utilisée uniquement si le produit n'a **aucune marque** (ex. verre trempé).
+  Le prix/stock restent **globaux** au produit ; la variante choisie (marque/modèle/couleur) est
+  enregistrée dans le **nom de la ligne de commande** (`order_items.name`). Sélection dans la fiche
+  produit (`ProductModal`, couleurs filtrées par modèle) ; édition dans `ProductEditor`
+  (`CompatEditor` → `ModelsEditor` → `ColorsEditor` imbriqués, + `ColorsEditor` global).
+  Rétrocompat : un modèle stocké en simple chaîne est lu comme `{name, colors:[]}`.
 - **orders** : `id`, `order_no`, `customer_name`, `phone`, `wilaya_code`, `commune`, `address`,
   `delivery_type` ('home'|'desk'), `note`, `subtotal`, `delivery_fee`, `total`, `status`.
 - **order_items** : `id`, `order_id`, `product_id`, `name`, `price`, `qty` (snapshot au moment de l'achat).

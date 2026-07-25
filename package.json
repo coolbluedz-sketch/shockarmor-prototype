@@ -8,6 +8,7 @@
     "apps/*"
   ],
   "scripts": {
+    "dev": "npm run dev -w @shockarmor/boutique",
     "dev:boutique": "npm run dev -w @shockarmor/boutique",
     "dev:admin": "npm run dev -w @shockarmor/admin",
     "build": "npm run build -w @shockarmor/boutique && npm run build -w @shockarmor/admin",

@@ -51,6 +51,8 @@ create table if not exists products (
   stock         int  not null default 0,
   drop_test     numeric,                  -- hauteur de chute testée en m (optionnel)
   images        jsonb  not null default '[]'::jsonb,  -- [{url, publicId}] hébergés sur Cloudinary
+  compat        jsonb  not null default '[]'::jsonb,  -- [{brand, models:[{name, colors:[{name,hex,url,publicId}]}]}] : couleurs PAR modèle
+  colors        jsonb  not null default '[]'::jsonb,  -- [{name,hex,url,publicId}] couleurs GLOBALES (repli si aucune marque)
   active        boolean not null default true,
   featured      boolean not null default false,
   created_at    timestamptz not null default now()

@@ -196,7 +196,7 @@ function ProductsAdmin({ t, L, lang, products, setProducts, cats }) {
   const [edit,setEdit] = useState(null);
   const [confirmDel,setConfirmDel] = useState(null); // produit en attente de confirmation de suppression
   const [deleting,setDeleting] = useState(false);
-  const blank = { id:"", cat:cats[0]?.id, sku:"", price:0, was:null, stock:0, drop:null, rating:4.5, hot:false, active:true, brand:"", model:"", fr:"",en:"",ar:"",dFr:"",dEn:"",dAr:"", images:[] };
+  const blank = { id:"", cat:cats[0]?.id, sku:"", price:0, was:null, stock:0, drop:null, rating:4.5, hot:false, active:true, brand:"", model:"", fr:"",en:"",ar:"",dFr:"",dEn:"",dAr:"", images:[], compat:[], colors:[] };
   const save = async (p) => {
     try {
       const saved = isSupabaseConfigured ? await api.saveProduct(p) : { ...p, id: p.id || "p"+Date.now() };
@@ -268,6 +268,72 @@ function ProductsAdmin({ t, L, lang, products, setProducts, cats }) {
   );
 }
 
+// Éditeur de compatibilité : marque → modèles, chaque modèle ayant ses couleurs.
+function CompatEditor({ value=[], onChange }) {
+  const upd = (i,patch)=>onChange(value.map((r,k)=>k===i?{...r,...patch}:r));
+  return (
+    <div>
+      {value.map((b,i)=>(
+        <div key={i} style={{border:`1px solid ${C.line}`,borderRadius:14,padding:12,marginBottom:12,background:C.bg}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10}}>
+            <input className="bx-input" style={{flex:1,fontWeight:700}} placeholder="Marque (ex : Samsung)" value={b.brand||""} onChange={e=>upd(i,{brand:e.target.value})}/>
+            <button className="bx-iconbtn" style={{color:C.red}} onClick={()=>onChange(value.filter((_,k)=>k!==i))} title="Supprimer la marque"><Trash2 size={15}/></button>
+          </div>
+          <ModelsEditor value={b.models||[]} onChange={(models)=>upd(i,{models})}/>
+        </div>
+      ))}
+      <button className="bx-btn bx-ghost" onClick={()=>onChange([...value,{brand:"",models:[]}])}><Plus size={15}/>Ajouter une marque</button>
+    </div>
+  );
+}
+
+// Modèles d'une marque : chaque modèle a un nom + ses propres couleurs (réutilise ColorsEditor).
+function ModelsEditor({ value=[], onChange }) {
+  const upd = (i,patch)=>onChange(value.map((r,k)=>k===i?{...r,...patch}:r));
+  return (
+    <div style={{paddingInlineStart:12,borderInlineStart:`2px solid ${C.line}`}}>
+      {value.map((m,i)=>(
+        <div key={i} style={{marginBottom:14}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
+            <input className="bx-input mono" style={{flex:1}} placeholder="Modèle (ex : Galaxy S23)" value={m.name||""} onChange={e=>upd(i,{name:e.target.value})}/>
+            <button className="bx-iconbtn" style={{color:C.red}} onClick={()=>onChange(value.filter((_,k)=>k!==i))} title="Supprimer le modèle"><Trash2 size={15}/></button>
+          </div>
+          <div style={{paddingInlineStart:6}}>
+            <label className="bx-label" style={{fontSize:11.5}}>Couleurs de ce modèle</label>
+            <ColorsEditor value={m.colors||[]} onChange={(colors)=>upd(i,{colors})}/>
+          </div>
+        </div>
+      ))}
+      <button className="bx-btn bx-ghost" style={{padding:"8px 14px"}} onClick={()=>onChange([...value,{name:"",colors:[]}])}><Plus size={14}/>Ajouter un modèle</button>
+    </div>
+  );
+}
+
+// Éditeur de couleurs : nom + une image (upload Cloudinary) par couleur.
+function ColorsEditor({ value=[], onChange }) {
+  const upd = (i,patch)=>onChange(value.map((r,k)=>k===i?{...r,...patch}:r));
+  return (
+    <div>
+      {value.map((c,i)=>(
+        <div key={i} style={{display:"flex",gap:12,marginBottom:12,alignItems:"flex-start",flexWrap:"wrap",border:`1px solid ${C.line}`,borderRadius:12,padding:12}}>
+          <input className="bx-input" style={{flex:"1 1 120px"}} placeholder="Nom de la couleur (ex : Noir)" value={c.name||""} onChange={e=>upd(i,{name:e.target.value})}/>
+          <input type="color" value={c.hex||"#111827"} onChange={e=>upd(i,{hex:e.target.value})} title="Couleur (utilisée si pas d'image)" style={{width:44,height:44,borderRadius:10,border:`1px solid ${C.line}`,padding:2,background:"#fff",cursor:"pointer",flexShrink:0}}/>
+          <div style={{flex:"1 1 190px"}}>
+            <ImageUploader
+              images={c.url ? [{url:c.url,publicId:c.publicId}] : []}
+              onChange={(imgs)=>upd(i,{url:imgs[0]?.url||"",publicId:imgs[0]?.publicId||""})}
+              folder="products/colors"
+              max={1}
+            />
+          </div>
+          <button className="bx-iconbtn" style={{color:C.red}} onClick={()=>onChange(value.filter((_,k)=>k!==i))}><Trash2 size={15}/></button>
+        </div>
+      ))}
+      <button className="bx-btn bx-ghost" onClick={()=>onChange([...value,{name:"",url:"",publicId:""}])}><Plus size={15}/>Ajouter une couleur</button>
+    </div>
+  );
+}
+
 function ProductEditor({ t, cats, product, onClose, onSave }) {
   const [p,setP] = useState(product);
   const set=(k,v)=>setP(prev=>({...prev,[k]:v}));
@@ -293,13 +359,21 @@ function ProductEditor({ t, cats, product, onClose, onSave }) {
           </div>
           <div style={{marginTop:12}}><label className="bx-label">Description (FR)</label><textarea className="bx-area" rows={2} value={p.dFr} onChange={e=>set("dFr",e.target.value)}/></div>
           <div style={{marginTop:12}}>
-            <label className="bx-label">Photos</label>
+            <label className="bx-label">Photos principales</label>
             <ImageUploader
               images={p.images || []}
               onChange={(imgs)=>set("images",imgs)}
               folder="products"
               max={6}
             />
+          </div>
+          <div style={{marginTop:16}}>
+            <label className="bx-label">Compatibilité & variantes <span style={{fontWeight:400,color:C.muted}}>(marque → modèle → couleurs)</span></label>
+            <CompatEditor value={p.compat||[]} onChange={(v)=>set("compat",v)}/>
+          </div>
+          <div style={{marginTop:16}}>
+            <label className="bx-label">Couleurs globales <span style={{fontWeight:400,color:C.muted}}>(utilisées si le produit n'a aucune marque)</span></label>
+            <ColorsEditor value={p.colors||[]} onChange={(v)=>set("colors",v)}/>
           </div>
           <div style={{marginTop:16,display:"flex",gap:24,flexWrap:"wrap"}}>
             <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",fontSize:14,fontWeight:600}}>

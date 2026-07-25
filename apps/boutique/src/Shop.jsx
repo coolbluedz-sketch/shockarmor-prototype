@@ -2,6 +2,18 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { ShoppingCart, Plus, Minus, Trash2, Search, X, Shield, Zap, Truck, CheckCircle, Package, LayoutDashboard, Tags, ClipboardList, Users, MapPin, LogOut, Menu, Globe, MessageCircle, Store, ChevronRight, ChevronLeft, Edit } from "lucide-react";
 import { C, T, WILAYAS, fmt, genNo, waLink, catArt, ProductArt, ProductVisual, Logo, LangSwitch, api, isSupabaseConfigured } from "@shared";
 
+// Retrouve l'objet couleur (nom + image) d'une ligne de panier : d'abord dans les
+// couleurs du modèle sélectionné (marque → modèle), sinon dans les couleurs globales.
+function resolveColor(p, brand, model, colorName) {
+  if (!colorName) return null;
+  if (p.compat?.length && brand && model) {
+    const mdl = p.compat.find(c => c.brand === brand)?.models?.find(m => m.name === model);
+    const c = mdl?.colors?.find(c => c.name === colorName);
+    if (c) return c;
+  }
+  return (p.colors || []).find(c => c.name === colorName) || null;
+}
+
 function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
   const L = (o) => o[lang] || o.fr;
   const [page, setPage] = useState("home");
@@ -24,17 +36,20 @@ function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
   const cartItems = cart.map(i => ({ ...i, p: products.find(p=>p.id===i.productId) })).filter(i=>i.p);
   const subtotal = cartItems.reduce((s,i)=>s + i.p.price*i.qty, 0);
 
-  const addToCart = (p, qty=1) => {
+  // Une ligne de panier est identifiée par produit + variante choisie (marque/modèle/couleur).
+  const vKey = (id, v={}) => `${id}|${v.brand||""}|${v.model||""}|${v.color||""}`;
+  const addToCart = (p, qty=1, v={}) => {
+    const key = vKey(p.id, v);
     setCart(prev => {
-      const ex = prev.find(i=>i.productId===p.id);
-      if (ex) return prev.map(i=>i.productId===p.id?{...i,qty:i.qty+qty}:i);
-      return [...prev, {productId:p.id, qty}];
+      const ex = prev.find(i=>i.key===key);
+      if (ex) return prev.map(i=>i.key===key?{...i,qty:i.qty+qty}:i);
+      return [...prev, { key, productId:p.id, qty, brand:v.brand||"", model:v.model||"", color:v.color||"" }];
     });
     setActiveProduct(null); setCartOpen(true);
   };
   // Achat direct : ajoute au panier puis va droit au checkout.
-  const buyNow = (p, qty=1) => { addToCart(p, qty); setCartOpen(false); setCheckout(true); };
-  const setQty = (id, qty) => setCart(prev => qty<=0 ? prev.filter(i=>i.productId!==id) : prev.map(i=>i.productId===id?{...i,qty}:i));
+  const buyNow = (p, qty=1, v={}) => { addToCart(p, qty, v); setCartOpen(false); setCheckout(true); };
+  const setQty = (key, qty) => setCart(prev => qty<=0 ? prev.filter(i=>i.key!==key) : prev.map(i=>i.key===key?{...i,qty}:i));
 
   let list = products.filter(p => p.active!==false && (catFilter==="all" || p.cat===catFilter));
   if (q.trim()) { const s=q.toLowerCase(); list = list.filter(p => L(p).toLowerCase().includes(s) || p.sku.toLowerCase().includes(s)); }
@@ -44,7 +59,11 @@ function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
   const placeOrder = async (form) => {
     const w = WILAYAS.find(x=>x.code===Number(form.wilaya));
     const delivery = fees[form.wilaya]?.[form.deliveryType==="home"?"home":"desk"] ?? 0;
-    const items = cartItems.map(i=>({ productId:i.p.id, name:L(i.p), price:i.p.price, qty:i.qty }));
+    const items = cartItems.map(i=>{
+      const v = [i.brand,i.model].filter(Boolean).join(" ");
+      const name = L(i.p) + (v?` — ${v}`:"") + (i.color?` · ${i.color}`:"");
+      return { productId:i.p.id, name, price:i.p.price, qty:i.qty };
+    });
     const draft = {
       id:"o"+Date.now(), no:genNo(), name:form.name, phone:form.phone, wilaya:Number(form.wilaya),
       commune:form.commune, address:form.address, deliveryType:form.deliveryType, note:form.note||"",
@@ -189,23 +208,29 @@ function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
                 <div style={{textAlign:"center",padding:"60px 0",color:C.muted}}>
                   <ShoppingCart size={40} style={{opacity:.3}}/><p style={{marginTop:12}}>{t.emptyCart}</p>
                 </div>
-              ) : cartItems.map(i=>(
-                <div className="bx-citem" key={i.productId}>
-                  <div className="ci-art" style={{width:64,height:64}}><ProductArt variant={catArt(i.p.cat)} size={56}/></div>
+              ) : cartItems.map(i=>{
+                const cImg = resolveColor(i.p, i.brand, i.model, i.color);
+                const thumbP = cImg?.url ? {...i.p, images:[{url:cImg.url,publicId:cImg.publicId}]} : i.p;
+                const vlabel = [i.brand,i.model].filter(Boolean).join(" ");
+                return (
+                <div className="bx-citem" key={i.key}>
+                  <div className="ci-art" style={{width:64,height:64}}><ProductVisual p={thumbP} size={56} radius={10}/></div>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:14}}>{L(i.p)}</div>
+                    {(vlabel||i.color) && <div style={{fontSize:12,color:C.muted,marginTop:2}}>{vlabel}{i.color?(vlabel?" · ":"")+i.color:""}</div>}
                     <div className="mono" style={{fontSize:13,color:C.muted,margin:"2px 0 8px"}}>{fmt(i.p.price,lang)}</div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                       <div className="bx-qty">
-                        <button onClick={()=>setQty(i.productId,i.qty-1)}><Minus size={14}/></button>
+                        <button onClick={()=>setQty(i.key,i.qty-1)}><Minus size={14}/></button>
                         <span>{i.qty}</span>
-                        <button onClick={()=>setQty(i.productId,i.qty+1)}><Plus size={14}/></button>
+                        <button onClick={()=>setQty(i.key,i.qty+1)}><Plus size={14}/></button>
                       </div>
-                      <button className="bx-iconbtn" onClick={()=>setQty(i.productId,0)}><Trash2 size={15}/></button>
+                      <button className="bx-iconbtn" onClick={()=>setQty(i.key,0)}><Trash2 size={15}/></button>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {cartItems.length>0 && (
               <div style={{padding:18,borderTop:`1px solid ${C.line}`}}>
@@ -249,6 +274,7 @@ function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
 
 function ProductCard({ p, t, L, lang, catName, onOpen, onAdd, onBuy }) {
   const out = p.stock<=0;
+  const hasOptions = (p.compat?.length>0) || (p.colors?.length>0);
   return (
     <div className="bx-prod">
       <div className="bx-prod-img" onClick={()=>onOpen(p)}>
@@ -274,13 +300,13 @@ function ProductCard({ p, t, L, lang, catName, onOpen, onAdd, onBuy }) {
             className="bx-btn"
             style={{background:"transparent",color:"var(--orange,#FF6600)",border:"1.5px solid var(--orange,#FF6600)",padding:"0 14px"}}
             disabled={out}
-            onClick={()=>onAdd(p)}
+            onClick={()=> hasOptions ? onOpen(p) : onAdd(p)}
             aria-label={t.addToCart}
             title={t.addToCart}
           >
             <ShoppingCart size={16}/>
           </button>
-          <button className="bx-btn bx-amber" style={{flex:1}} disabled={out} onClick={()=>onBuy(p)}>
+          <button className="bx-btn bx-amber" style={{flex:1}} disabled={out} onClick={()=> hasOptions ? onOpen(p) : onBuy(p)}>
             {out?t.outOfStock:t.buyNow}
           </button>
         </div>
@@ -290,24 +316,80 @@ function ProductCard({ p, t, L, lang, catName, onOpen, onAdd, onBuy }) {
 }
 
 function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
-  const [qty,setQty] = useState(1); const out = p.stock<=0;
+  const [qty,setQty] = useState(1);
+  const compat = p.compat||[]; const globalColors = p.colors||[];
+  const needBrand = compat.length>0;
+  const [brand,setBrand] = useState(compat.length===1 ? compat[0].brand : "");
+  const [model,setModel] = useState("");
+  const [color,setColor] = useState("");
+  const out = p.stock<=0;
+  const models = (compat.find(c=>c.brand===brand)?.models) || []; // [{ name, colors }]
+  const modelColors = (models.find(m=>m.name===model)?.colors) || [];
+  // Couleurs actives : celles du modèle choisi (mode marque), sinon les couleurs globales.
+  const activeColors = needBrand ? modelColors : globalColors;
+  const needColor = activeColors.length>0;
+  // Réinitialise (ou auto-sélectionne si unique) la couleur quand la marque/le modèle change.
+  useEffect(()=>{ setColor(activeColors.length===1 ? activeColors[0].name : ""); }, [brand, model]);
+  const ready = (!needBrand || (brand && model)) && (!needColor || color);
+  const canBuy = !out && ready;
+  const selColor = activeColors.find(c=>c.name===color);
+  const displayP = selColor?.url ? { ...p, images:[{url:selColor.url,publicId:selColor.publicId}] } : p;
+  const variant = { brand:needBrand?brand:"", model:needBrand?model:"", color:needColor?color:"" };
   return (
     <div className="bx-overlay" onClick={onClose}>
       <div className="bx-modal" onClick={e=>e.stopPropagation()}>
         <div className="bx-dh"><h3>{L(p)}</h3><button className="bx-x" onClick={onClose}><X size={18}/></button></div>
         <div className="bx-prodmodal">
           <div style={{background:C.mist,display:"grid",placeItems:"center",padding:24,minHeight:240}}>
-            <ProductVisual p={p} size={200} radius={16}/>
+            <ProductVisual p={displayP} size={200} radius={16}/>
           </div>
           <div style={{padding:20}}>
             <span className="bx-prod-cat">{catName(p.cat)}</span>
-            <div className="bx-prod-bm" style={{marginTop:4}}>{p.brand} · {p.model}</div>
+            {(p.brand||p.model) && <div className="bx-prod-bm" style={{marginTop:4}}>{p.brand} · {p.model}</div>}
             <div className="bx-price" style={{margin:"8px 0 12px"}}>
               <span className="now mono" style={{fontSize:24}}>{fmt(p.price,lang)}</span>
               {p.was && <span className="was mono">{fmt(p.was,lang)}</span>}
             </div>
             <p style={{fontSize:14,color:C.inkSoft,marginBottom:14}}>{L({fr:p.dFr,en:p.dEn,ar:p.dAr})}</p>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+
+            {needBrand && (
+              <div style={{marginBottom:12}}>
+                <label className="bx-label">{t.optBrand}</label>
+                <div className="bx-filters" style={{marginBottom:0}}>
+                  {compat.map((c,i)=>(
+                    <button key={i} type="button" className={brand===c.brand?"on":""} onClick={()=>{setBrand(c.brand);setModel("");}}>{c.brand}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {needBrand && brand && (
+              <div style={{marginBottom:12}}>
+                <label className="bx-label">{t.optModel}</label>
+                <div className="bx-filters" style={{marginBottom:0}}>
+                  {models.map((m,i)=>(
+                    <button key={i} type="button" className={model===m.name?"on":""} onClick={()=>setModel(m.name)}>{m.name}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {needColor && (
+              <div style={{marginBottom:12}}>
+                <label className="bx-label">{t.optColor}</label>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {activeColors.map((c,i)=>(
+                    <button key={i} type="button" onClick={()=>setColor(c.name)} title={c.name}
+                      style={{border:`2px solid ${color===c.name?C.cobalt:C.line}`,borderRadius:12,padding:4,background:"#fff",display:"flex",flexDirection:"column",alignItems:"center",gap:3,width:68,cursor:"pointer"}}>
+                      {c.url
+                        ? <img src={c.url} alt={c.name} style={{width:52,height:52,objectFit:"cover",borderRadius:8,display:"block"}}/>
+                        : <div style={{width:52,height:52,borderRadius:8,background:c.hex||C.mist,border:`1px solid ${C.line}`}}/>}
+                      <span style={{fontSize:11,fontWeight:600,lineHeight:1.1,textAlign:"center"}}>{c.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
               <span className="bx-spec mono">SKU {p.sku}</span>
               {p.drop && <span className="bx-spec"><Shield size={12} color={C.cobalt}/>{t.dropTest} <span className="mono">{p.drop} m</span></span>}
               <span className="bx-spec" style={{color:out?C.red:C.green}}>{out?t.outOfStock:`${t.inStock} (${p.stock})`}</span>
@@ -321,11 +403,12 @@ function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
                 </div>
               </div>
             )}
+            {!canBuy && !out && <div style={{fontSize:12.5,color:C.amberDk,marginBottom:10,fontWeight:600}}>{t.chooseOptions}</div>}
             <div style={{display:"flex",gap:10}}>
-              <button className="bx-btn" style={{flex:1,background:"transparent",color:"var(--orange,#FF6600)",border:"1.5px solid var(--orange,#FF6600)"}} disabled={out} onClick={()=>onAdd(p,qty)}>
+              <button className="bx-btn" style={{flex:1,background:"transparent",color:"var(--orange,#FF6600)",border:"1.5px solid var(--orange,#FF6600)",opacity:canBuy?1:.5}} disabled={!canBuy} onClick={()=>onAdd(p,qty,variant)}>
                 <ShoppingCart size={16}/>{out?t.outOfStock:t.addToCart}
               </button>
-              <button className="bx-btn bx-amber" style={{flex:1}} disabled={out} onClick={()=>onBuy(p,qty)}>
+              <button className="bx-btn bx-amber" style={{flex:1}} disabled={!canBuy} onClick={()=>onBuy(p,qty,variant)}>
                 {out?t.outOfStock:t.buyNow}
               </button>
             </div>
