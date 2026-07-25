@@ -4,14 +4,15 @@
 --
 --  Un produit (ex. coque antichoc) est vendu pour plusieurs marques/modèles
 --  de téléphone et en plusieurs couleurs, au lieu d'une fiche par modèle.
---  Les COULEURS sont rattachées à CHAQUE MODÈLE (chaque modèle a sa propre gamme) :
+--  Les COULEURS sont rattachées à CHAQUE MODÈLE, et le STOCK est par modèle/couleur :
 --    compat : [{ "brand": "Samsung", "models": [
---                 { "name": "S23", "colors": [{ "name":"Noir", "hex":"#111", "url":"...", "publicId":"..." }] },
---                 { "name": "S24", "colors": [] }
+--                 { "name": "S23", "colors": [{ "name":"Noir", "hex":"#111", "stock":12, "url":"...", "publicId":"..." }] },
+--                 { "name": "A54", "stock": 20, "colors": [] }   -- modèle sans couleur : stock sur le modèle
 --               ]}, ...]
---    colors : couleurs GLOBALES, utilisées seulement si le produit n'a aucune marque
---             (ex. verre trempé) : [{ "name":"Noir", "hex":"#111", "url":"...", "publicId":"..." }, ...]
---  (Rétrocompat : un modèle stocké en simple chaîne "S23" est lu comme { name:"S23", colors:[] }.)
+--    colors : couleurs GLOBALES (repli si le produit n'a aucune marque, ex. verre trempé) :
+--             [{ "name":"Noir", "hex":"#111", "stock":30, "url":"...", "publicId":"..." }, ...]
+--  Un stock non renseigné retombe sur products.stock (rétrocompat). Un modèle stocké en
+--  simple chaîne "S23" est lu comme { name:"S23", colors:[] } (stock = products.stock).
 -- =====================================================================
 
 alter table products

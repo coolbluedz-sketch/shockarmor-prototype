@@ -14,6 +14,28 @@ function resolveColor(p, brand, model, colorName) {
   return (p.colors || []).find(c => c.name === colorName) || null;
 }
 
+// Stock de la variante choisie : couleur (sous modèle) → modèle → couleur globale → produit.
+// Un stock non défini (undefined/null/"") retombe sur le stock de base du produit
+// (rétrocompat : les produits/variantes sans stock propre restent vendables).
+function variantStock(p, brand, model, colorName) {
+  const base = Number(p.stock) || 0;
+  const pick = (v) => (v === undefined || v === null || v === "") ? base : (Number(v) || 0);
+  if (p.compat?.length) {
+    const mdl = p.compat.find(c => c.brand === brand)?.models?.find(m => m.name === model);
+    if (!mdl) return 0;
+    if (mdl.colors?.length) {
+      const c = mdl.colors.find(c => c.name === colorName);
+      return c ? pick(c.stock) : 0;
+    }
+    return pick(mdl.stock);
+  }
+  if (p.colors?.length) {
+    const c = p.colors.find(c => c.name === colorName);
+    return c ? pick(c.stock) : 0;
+  }
+  return base;
+}
+
 function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
   const L = (o) => o[lang] || o.fr;
   const [page, setPage] = useState("home");
@@ -273,13 +295,11 @@ function Shop({ t, lang, setLang, cats, products, fees, setOrders, waNumber }) {
 }
 
 function ProductCard({ p, t, L, lang, catName, onOpen, onAdd, onBuy }) {
-  const out = p.stock<=0;
   const hasOptions = (p.compat?.length>0) || (p.colors?.length>0);
   return (
     <div className="bx-prod">
       <div className="bx-prod-img" onClick={()=>onOpen(p)}>
-        {p.was && !out && <span className="bx-tag">-{Math.round((1-p.price/p.was)*100)}%</span>}
-        {out && <span className="bx-tag out">{t.outOfStock}</span>}
+        {p.was && <span className="bx-tag">-{Math.round((1-p.price/p.was)*100)}%</span>}
         <ProductVisual p={p} size={190}/>
       </div>
       <div className="bx-prod-body">
@@ -299,15 +319,14 @@ function ProductCard({ p, t, L, lang, catName, onOpen, onAdd, onBuy }) {
           <button
             className="bx-btn"
             style={{background:"transparent",color:"var(--orange,#FF6600)",border:"1.5px solid var(--orange,#FF6600)",padding:"0 14px"}}
-            disabled={out}
             onClick={()=> hasOptions ? onOpen(p) : onAdd(p)}
             aria-label={t.addToCart}
             title={t.addToCart}
           >
             <ShoppingCart size={16}/>
           </button>
-          <button className="bx-btn bx-amber" style={{flex:1}} disabled={out} onClick={()=> hasOptions ? onOpen(p) : onBuy(p)}>
-            {out?t.outOfStock:t.buyNow}
+          <button className="bx-btn bx-amber" style={{flex:1}} onClick={()=> hasOptions ? onOpen(p) : onBuy(p)}>
+            {t.buyNow}
           </button>
         </div>
       </div>
@@ -322,8 +341,7 @@ function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
   const [brand,setBrand] = useState(compat.length===1 ? compat[0].brand : "");
   const [model,setModel] = useState("");
   const [color,setColor] = useState("");
-  const out = p.stock<=0;
-  const models = (compat.find(c=>c.brand===brand)?.models) || []; // [{ name, colors }]
+  const models = (compat.find(c=>c.brand===brand)?.models) || []; // [{ name, stock, colors }]
   const modelColors = (models.find(m=>m.name===model)?.colors) || [];
   // Couleurs actives : celles du modèle choisi (mode marque), sinon les couleurs globales.
   const activeColors = needBrand ? modelColors : globalColors;
@@ -331,7 +349,12 @@ function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
   // Réinitialise (ou auto-sélectionne si unique) la couleur quand la marque/le modèle change.
   useEffect(()=>{ setColor(activeColors.length===1 ? activeColors[0].name : ""); }, [brand, model]);
   const ready = (!needBrand || (brand && model)) && (!needColor || color);
-  const canBuy = !out && ready;
+  // Stock de la variante choisie — connu seulement une fois la sélection complète ("ready").
+  const selStock = ready ? variantStock(p, brand, model, color) : 0;
+  const outSel = ready && selStock<=0;
+  const canBuy = ready && selStock>0;
+  // Remet la quantité à 1 quand la variante change (évite qty > stock).
+  useEffect(()=>{ setQty(1); }, [brand, model, color]);
   const selColor = activeColors.find(c=>c.name===color);
   const displayP = selColor?.url ? { ...p, images:[{url:selColor.url,publicId:selColor.publicId}] } : p;
   const variant = { brand:needBrand?brand:"", model:needBrand?model:"", color:needColor?color:"" };
@@ -392,24 +415,24 @@ function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
             <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
               <span className="bx-spec mono">SKU {p.sku}</span>
               {p.drop && <span className="bx-spec"><Shield size={12} color={C.cobalt}/>{t.dropTest} <span className="mono">{p.drop} m</span></span>}
-              <span className="bx-spec" style={{color:out?C.red:C.green}}>{out?t.outOfStock:`${t.inStock} (${p.stock})`}</span>
+              {ready && <span className="bx-spec" style={{color:outSel?C.red:C.green}}>{outSel?t.outOfStock:t.inStock}</span>}
             </div>
-            {!out && (
+            {canBuy && (
               <div className="bx-row-gap" style={{marginBottom:12}}>
                 <div className="bx-qty">
                   <button onClick={()=>setQty(Math.max(1,qty-1))}><Minus size={14}/></button>
                   <span>{qty}</span>
-                  <button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus size={14}/></button>
+                  <button onClick={()=>setQty(Math.min(selStock,qty+1))}><Plus size={14}/></button>
                 </div>
               </div>
             )}
-            {!canBuy && !out && <div style={{fontSize:12.5,color:C.amberDk,marginBottom:10,fontWeight:600}}>{t.chooseOptions}</div>}
+            {!canBuy && !outSel && <div style={{fontSize:12.5,color:C.amberDk,marginBottom:10,fontWeight:600}}>{t.chooseOptions}</div>}
             <div style={{display:"flex",gap:10}}>
               <button className="bx-btn" style={{flex:1,background:"transparent",color:"var(--orange,#FF6600)",border:"1.5px solid var(--orange,#FF6600)",opacity:canBuy?1:.5}} disabled={!canBuy} onClick={()=>onAdd(p,qty,variant)}>
-                <ShoppingCart size={16}/>{out?t.outOfStock:t.addToCart}
+                <ShoppingCart size={16}/>{outSel?t.outOfStock:t.addToCart}
               </button>
               <button className="bx-btn bx-amber" style={{flex:1}} disabled={!canBuy} onClick={()=>onBuy(p,qty,variant)}>
-                {out?t.outOfStock:t.buyNow}
+                {outSel?t.outOfStock:t.buyNow}
               </button>
             </div>
           </div>

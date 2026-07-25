@@ -21,20 +21,21 @@ values (
   'Shockproof case compatible with many phone models. Pick your phone then your color.',
   'غطاء مضاد للصدمات متوافق مع عدة موديلات. اختر هاتفك ثم لونك.',
   1990, 2600, 50, 2.4, true, true,
-  -- compat : marque → modèles, chaque modèle ayant SES couleurs (nom + hex + image).
+  -- compat : marque → modèles, chaque modèle ayant SES couleurs + un STOCK par couleur.
+  -- Un modèle sans couleur porte son stock directement ("stock"). stock=0 → rupture.
   '[
     {"brand":"Samsung","models":[
-      {"name":"Galaxy S23","colors":[{"name":"Noir","hex":"#111827","url":"","publicId":""},{"name":"Bleu","hex":"#1E5FD0","url":"","publicId":""}]},
-      {"name":"Galaxy S24","colors":[{"name":"Noir","hex":"#111827","url":"","publicId":""},{"name":"Vert","hex":"#14B86A","url":"","publicId":""}]},
-      {"name":"Galaxy A54","colors":[]}
+      {"name":"Galaxy S23","colors":[{"name":"Noir","hex":"#111827","stock":12,"url":"","publicId":""},{"name":"Bleu","hex":"#1E5FD0","stock":5,"url":"","publicId":""}]},
+      {"name":"Galaxy S24","colors":[{"name":"Noir","hex":"#111827","stock":8,"url":"","publicId":""},{"name":"Vert","hex":"#14B86A","stock":0,"url":"","publicId":""}]},
+      {"name":"Galaxy A54","stock":20,"colors":[]}
     ]},
     {"brand":"iPhone","models":[
-      {"name":"iPhone 15","colors":[{"name":"Noir","hex":"#111827","url":"","publicId":""},{"name":"Bleu","hex":"#1E5FD0","url":"","publicId":""},{"name":"Rouge","hex":"#E0342B","url":"","publicId":""}]},
-      {"name":"iPhone 15 Pro","colors":[{"name":"Titane","hex":"#8A8D8F","url":"","publicId":""},{"name":"Noir","hex":"#111827","url":"","publicId":""}]}
+      {"name":"iPhone 15","colors":[{"name":"Noir","hex":"#111827","stock":10,"url":"","publicId":""},{"name":"Bleu","hex":"#1E5FD0","stock":6,"url":"","publicId":""},{"name":"Rouge","hex":"#E0342B","stock":0,"url":"","publicId":""}]},
+      {"name":"iPhone 15 Pro","colors":[{"name":"Titane","hex":"#8A8D8F","stock":4,"url":"","publicId":""},{"name":"Noir","hex":"#111827","stock":9,"url":"","publicId":""}]}
     ]},
     {"brand":"Xiaomi","models":[
-      {"name":"Redmi Note 13","colors":[]},
-      {"name":"13T Pro","colors":[]}
+      {"name":"Redmi Note 13","stock":15,"colors":[]},
+      {"name":"13T Pro","stock":0,"colors":[]}
     ]}
   ]'::jsonb,
   -- colors : couleurs globales, utilisées uniquement si le produit n'a AUCUNE marque.

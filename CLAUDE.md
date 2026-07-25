@@ -129,16 +129,23 @@ Voir `docs/supabase-schema.sql` pour le schéma SQL complet. Résumé des entit�
   `public_id` : `products.images` est donc une colonne **`jsonb`** = `[{ url, publicId }]`
   (et non `text[]`). Si le schéma a été appliqué avant ce changement, exécuter
   `docs/supabase-migration-01-images-jsonb.sql`.
-  ⚠️ **Variantes** (migration 03) : un produit est configurable par le client. Les couleurs
-  sont rattachées à **chaque modèle** :
-  `compat` (jsonb `[{brand, models:[{name, colors:[{name,hex,url,publicId}]}]}]`) porte les
-  marques → modèles → couleurs ; `colors` (jsonb `[{name,hex,url,publicId}]`) est une liste
-  **globale de repli**, utilisée uniquement si le produit n'a **aucune marque** (ex. verre trempé).
-  Le prix/stock restent **globaux** au produit ; la variante choisie (marque/modèle/couleur) est
-  enregistrée dans le **nom de la ligne de commande** (`order_items.name`). Sélection dans la fiche
-  produit (`ProductModal`, couleurs filtrées par modèle) ; édition dans `ProductEditor`
+  ⚠️ **Variantes** (migration 03) : un produit est configurable par le client. Les couleurs et le
+  **stock** sont rattachés à **chaque modèle** :
+  `compat` (jsonb `[{brand, models:[{name, stock, colors:[{name,hex,url,publicId,stock}]}]}]`) porte
+  marques → modèles → couleurs, avec un **stock par couleur** (ou par modèle si le modèle n'a pas de
+  couleur) ; `colors` (jsonb `[{name,hex,url,publicId,stock}]`) est une liste **globale de repli**,
+  utilisée uniquement si le produit n'a **aucune marque** (ex. verre trempé). Le **prix** reste global
+  au produit ; le **stock effectif** de la variante = `variantStock()` (couleur → modèle → couleur
+  globale → `products.stock`), un stock non renseigné retombant sur `products.stock` (rétrocompat).
+  La variante choisie (marque/modèle/couleur) est enregistrée dans le **nom de la ligne de commande**
+  (`order_items.name`). Sélection dans la fiche produit (`ProductModal` : marque/modèle/couleur en
+  **boutons**, couleurs filtrées par modèle, stock affiché après sélection complète) ; le **stock
+  n'apparaît pas sur les cartes** de la page principale. Édition dans `ProductEditor`
   (`CompatEditor` → `ModelsEditor` → `ColorsEditor` imbriqués, + `ColorsEditor` global).
-  Rétrocompat : un modèle stocké en simple chaîne est lu comme `{name, colors:[]}`.
+  ⚠️ **À faire (backend)** : le décompte du stock à la confirmation (`confirm_order` / proto
+  `changeStatus`) agit encore sur `products.stock` global, **pas** sur le stock de la variante —
+  câbler le décompte par variante nécessite de stocker marque/modèle/couleur dans `order_items` et
+  d'adapter la RPC.
 - **orders** : `id`, `order_no`, `customer_name`, `phone`, `wilaya_code`, `commune`, `address`,
   `delivery_type` ('home'|'desk'), `note`, `subtotal`, `delivery_fee`, `total`, `status`.
 - **order_items** : `id`, `order_id`, `product_id`, `name`, `price`, `qty` (snapshot au moment de l'achat).

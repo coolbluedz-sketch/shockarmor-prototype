@@ -46,7 +46,13 @@ export const normCompat = (raw) =>
       models: (Array.isArray(c.models) ? c.models : [])
         .map((m) => (typeof m === "string" ? { name: m, colors: [] } : m))
         .filter((m) => m && typeof m === "object" && m.name)
-        .map((m) => ({ name: m.name, colors: normColors(m.colors) })),
+        .map((m) => {
+          // Le stock du modèle est optionnel : on ne le matérialise que s'il est défini,
+          // sinon le stock retombe sur celui du produit (rétrocompat).
+          const model = { name: m.name, colors: normColors(m.colors) };
+          if (m.stock !== undefined && m.stock !== null && m.stock !== "") model.stock = Number(m.stock) || 0;
+          return model;
+        }),
     }));
 
 export const productFromDb = (r) => ({

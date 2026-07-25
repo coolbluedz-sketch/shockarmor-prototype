@@ -81,17 +81,17 @@ const SEED_PRODUCTS = [
     // Couleurs rattachées à CHAQUE modèle (chaque modèle peut avoir sa propre gamme de couleurs).
     compat:[
       { brand:"Samsung", models:[
-        { name:"Galaxy S23", colors:[{name:"Noir",hex:"#111827",url:"",publicId:""},{name:"Bleu",hex:"#1E5FD0",url:"",publicId:""}] },
-        { name:"Galaxy S24", colors:[{name:"Noir",hex:"#111827",url:"",publicId:""},{name:"Vert",hex:"#14B86A",url:"",publicId:""}] },
-        { name:"Galaxy A54", colors:[] },
+        { name:"Galaxy S23", colors:[{name:"Noir",hex:"#111827",stock:12,url:"",publicId:""},{name:"Bleu",hex:"#1E5FD0",stock:5,url:"",publicId:""}] },
+        { name:"Galaxy S24", colors:[{name:"Noir",hex:"#111827",stock:8,url:"",publicId:""},{name:"Vert",hex:"#14B86A",stock:0,url:"",publicId:""}] },
+        { name:"Galaxy A54", stock:20, colors:[] },
       ]},
       { brand:"iPhone", models:[
-        { name:"iPhone 15", colors:[{name:"Noir",hex:"#111827",url:"",publicId:""},{name:"Bleu",hex:"#1E5FD0",url:"",publicId:""},{name:"Rouge",hex:"#E0342B",url:"",publicId:""}] },
-        { name:"iPhone 15 Pro", colors:[{name:"Titane",hex:"#8A8D8F",url:"",publicId:""},{name:"Noir",hex:"#111827",url:"",publicId:""}] },
+        { name:"iPhone 15", colors:[{name:"Noir",hex:"#111827",stock:10,url:"",publicId:""},{name:"Bleu",hex:"#1E5FD0",stock:6,url:"",publicId:""},{name:"Rouge",hex:"#E0342B",stock:0,url:"",publicId:""}] },
+        { name:"iPhone 15 Pro", colors:[{name:"Titane",hex:"#8A8D8F",stock:4,url:"",publicId:""},{name:"Noir",hex:"#111827",stock:9,url:"",publicId:""}] },
       ]},
       { brand:"Xiaomi", models:[
-        { name:"Redmi Note 13", colors:[] },
-        { name:"13T Pro", colors:[] },
+        { name:"Redmi Note 13", stock:15, colors:[] },
+        { name:"13T Pro", stock:0, colors:[] },
       ]},
     ],
     colors:[] },
@@ -413,7 +413,7 @@ const CSS = `
 /* overlay/drawer/modal */
 .bx-overlay{position:fixed;inset:0;background:rgba(15,34,51,.45);z-index:50;display:flex;}
 .bx-drawer{margin-inline-start:auto;width:min(440px,100%);background:#fff;height:100%;display:flex;flex-direction:column;}
-.bx-modal{margin:auto;width:min(640px,94%);max-height:92vh;overflow-y:auto;overflow-x:hidden;background:#fff;border-radius:22px;}
+.bx-modal{margin:auto;width:min(640px,94%);max-height:92vh;overflow-y:auto;overflow-x:hidden;background:#fff;border-radius:22px;overflow-wrap:break-word;word-break:break-word;}
 .bx-modal.sm{width:min(470px,94%);}
 .bx-prodmodal{display:grid;grid-template-columns:1fr 1fr;gap:0;}
 .bx-prodmodal>div{min-width:0;}

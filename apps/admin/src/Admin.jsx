@@ -296,10 +296,11 @@ function ModelsEditor({ value=[], onChange }) {
         <div key={i} style={{marginBottom:14}}>
           <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
             <input className="bx-input mono" style={{flex:1}} placeholder="Modèle (ex : Galaxy S23)" value={m.name||""} onChange={e=>upd(i,{name:e.target.value})}/>
+            {!(m.colors||[]).length && <input className="bx-input mono" style={{flex:"0 1 110px"}} type="number" min="0" placeholder="Stock" value={m.stock ?? ""} onChange={e=>upd(i,{stock:e.target.value===""?undefined:Number(e.target.value)})} title="Stock de ce modèle (sans couleurs)"/>}
             <button className="bx-iconbtn" style={{color:C.red}} onClick={()=>onChange(value.filter((_,k)=>k!==i))} title="Supprimer le modèle"><Trash2 size={15}/></button>
           </div>
           <div style={{paddingInlineStart:6}}>
-            <label className="bx-label" style={{fontSize:11.5}}>Couleurs de ce modèle</label>
+            <label className="bx-label" style={{fontSize:11.5}}>Couleurs de ce modèle <span style={{fontWeight:400}}>(le stock se saisit alors par couleur)</span></label>
             <ColorsEditor value={m.colors||[]} onChange={(colors)=>upd(i,{colors})}/>
           </div>
         </div>
@@ -318,6 +319,7 @@ function ColorsEditor({ value=[], onChange }) {
         <div key={i} style={{display:"flex",gap:12,marginBottom:12,alignItems:"flex-start",flexWrap:"wrap",border:`1px solid ${C.line}`,borderRadius:12,padding:12}}>
           <input className="bx-input" style={{flex:"1 1 120px"}} placeholder="Nom de la couleur (ex : Noir)" value={c.name||""} onChange={e=>upd(i,{name:e.target.value})}/>
           <input type="color" value={c.hex||"#111827"} onChange={e=>upd(i,{hex:e.target.value})} title="Couleur (utilisée si pas d'image)" style={{width:44,height:44,borderRadius:10,border:`1px solid ${C.line}`,padding:2,background:"#fff",cursor:"pointer",flexShrink:0}}/>
+          <input className="bx-input mono" style={{flex:"0 1 90px"}} type="number" min="0" placeholder="Stock" value={c.stock ?? ""} onChange={e=>upd(i,{stock:e.target.value===""?undefined:Number(e.target.value)})} title="Stock de cette couleur"/>
           <div style={{flex:"1 1 190px"}}>
             <ImageUploader
               images={c.url ? [{url:c.url,publicId:c.publicId}] : []}
@@ -354,7 +356,7 @@ function ProductEditor({ t, cats, product, onClose, onSave }) {
                 {cats.map(c=><option key={c.id} value={c.id}>{c.fr}</option>)}
               </select></div>
             <div><label className="bx-label">{t.price} (DA)</label><input className="bx-input mono" type="number" value={p.price} onChange={e=>set("price",Number(e.target.value))}/></div>
-            <div><label className="bx-label">{t.stock}</label><input className="bx-input mono" type="number" value={p.stock} onChange={e=>set("stock",Number(e.target.value))}/></div>
+            <div><label className="bx-label">{t.stock} <span style={{fontWeight:400,color:C.muted}}>(base — sans variante)</span></label><input className="bx-input mono" type="number" value={p.stock} onChange={e=>set("stock",Number(e.target.value))}/></div>
             <div><label className="bx-label">{t.dropTest} (m)</label><input className="bx-input mono" type="number" step="0.1" value={p.drop||""} onChange={e=>set("drop",e.target.value?Number(e.target.value):null)}/></div>
           </div>
           <div style={{marginTop:12}}><label className="bx-label">Description (FR)</label><textarea className="bx-area" rows={2} value={p.dFr} onChange={e=>set("dFr",e.target.value)}/></div>
