@@ -330,7 +330,7 @@ const S = {
     background: "var(--paper, #FFFFFF)",
   },
   tilePending: { borderStyle: "dashed" },
-  img: { width: "100%", height: "100%", objectFit: "cover", display: "block" },
+  img: { width: "100%", height: "100%", objectFit: "contain", display: "block" },
   removeBtn: {
     position: "absolute",
     top: 6,

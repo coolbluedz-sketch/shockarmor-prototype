@@ -403,7 +403,7 @@ function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
                     <button key={i} type="button" onClick={()=>setColor(c.name)} title={c.name}
                       style={{border:`2px solid ${color===c.name?C.cobalt:C.line}`,borderRadius:12,padding:4,background:"#fff",display:"flex",flexDirection:"column",alignItems:"center",gap:3,width:68,cursor:"pointer"}}>
                       {c.url
-                        ? <img src={c.url} alt={c.name} style={{width:52,height:52,objectFit:"cover",borderRadius:8,display:"block"}}/>
+                        ? <img src={c.url} alt={c.name} style={{width:52,height:52,objectFit:"contain",borderRadius:8,display:"block"}}/>
                         : <div style={{width:52,height:52,borderRadius:8,background:c.hex||C.mist,border:`1px solid ${C.line}`}}/>}
                       <span style={{fontSize:11,fontWeight:600,lineHeight:1.1,textAlign:"center"}}>{c.name}</span>
                     </button>

@@ -581,13 +581,15 @@ function LangSwitch({ lang, setLang }) {
 }
 
 // Visuel produit : 1re vraie photo (product.images) si présente, sinon illustration SVG.
-function ProductVisual({ p, size=138, accent=C.cobalt, radius=14 }) {
+// fit="contain" (défaut) = image ENTIÈRE visible dans le carré (jamais recadrée) ;
+// fit="cover" = remplit le carré en rognant les bords.
+function ProductVisual({ p, size=138, accent=C.cobalt, radius=14, fit="contain" }) {
   const [failed, setFailed] = useState(false);
   const url = p.images?.[0]?.url;
   useEffect(() => { setFailed(false); }, [url]); // réinitialise si le produit/URL change
   if (url && !failed) {
     // alt = nom du produit (accessibilité/SEO) ; onError → repli sur l'illustration SVG si l'URL est morte.
-    return <img src={url} alt={p.fr || p.en || p.ar || ""} loading="lazy" onError={()=>setFailed(true)} style={{width:size,height:size,maxWidth:"100%",objectFit:"cover",borderRadius:radius,display:"block"}}/>;
+    return <img src={url} alt={p.fr || p.en || p.ar || ""} loading="lazy" onError={()=>setFailed(true)} style={{width:size,height:size,maxWidth:"100%",objectFit:fit,borderRadius:radius,display:"block"}}/>;
   }
   return <ProductArt variant={catArt(p.cat)} accent={accent} size={size}/>;
 }
