@@ -360,11 +360,11 @@ function ProductModal({ p, t, L, lang, catName, onClose, onAdd, onBuy }) {
   const variant = { brand:needBrand?brand:"", model:needBrand?model:"", color:needColor?color:"" };
   return (
     <div className="bx-overlay" onClick={onClose}>
-      <div className="bx-modal" onClick={e=>e.stopPropagation()}>
+      <div className="bx-modal lg" onClick={e=>e.stopPropagation()}>
         <div className="bx-dh"><h3>{L(p)}</h3><button className="bx-x" onClick={onClose}><X size={18}/></button></div>
         <div className="bx-prodmodal">
-          <div style={{background:C.mist,display:"grid",placeItems:"center",padding:24,minHeight:240}}>
-            <ProductVisual p={displayP} size={200} radius={16}/>
+          <div className="bx-pm-img">
+            <ProductVisual p={displayP} size="100%" radius={16}/>
           </div>
           <div style={{padding:20}}>
             <span className="bx-prod-cat">{catName(p.cat)}</span>

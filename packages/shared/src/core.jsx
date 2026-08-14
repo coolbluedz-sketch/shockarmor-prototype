@@ -415,8 +415,12 @@ const CSS = `
 .bx-drawer{margin-inline-start:auto;width:min(440px,100%);background:#fff;height:100%;display:flex;flex-direction:column;}
 .bx-modal{margin:auto;width:min(640px,94%);max-height:92vh;overflow-y:auto;overflow-x:hidden;background:#fff;border-radius:22px;overflow-wrap:break-word;word-break:break-word;}
 .bx-modal.sm{width:min(470px,94%);}
-.bx-prodmodal{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.bx-modal.lg{width:min(880px,94%);}
+.bx-prodmodal{display:grid;grid-template-columns:1.1fr 1fr;gap:0;}
 .bx-prodmodal>div{min-width:0;}
+/* Volet visuel de la fiche produit : carré fluide, l'image occupe toute la colonne. */
+.bx-pm-img{background:var(--mist);display:grid;place-items:center;padding:20px;}
+.bx-pm-img>*{width:100%;max-width:420px;}
 .bx-dh{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line);}
 .bx-dh h3{font-size:17px;}
 .bx-x{background:var(--mist);border-radius:10px;width:36px;height:36px;display:grid;place-items:center;color:var(--inkSoft);transition:.15s;}
@@ -512,8 +516,10 @@ const CSS = `
   .bx-sec-h h2{font-size:22px;}
   .bx-section{padding:36px 0;}
   .bx-trust .bx-wrap{gap:18px;}
-  .bx-modal,.bx-modal.sm{width:96%;}
+  .bx-modal,.bx-modal.sm,.bx-modal.lg{width:96%;}
   .bx-prodmodal{grid-template-columns:1fr;}
+  .bx-pm-img{padding:16px;}
+  .bx-pm-img>*{max-width:300px;}
   .bx-head-actions{gap:8px;}
   .bx-langbtn{height:44px;padding:0 10px;}
   .bx-langbtn .lc{display:none;}
@@ -583,14 +589,20 @@ function LangSwitch({ lang, setLang }) {
 // Visuel produit : 1re vraie photo (product.images) si présente, sinon illustration SVG.
 // fit="contain" (défaut) = image ENTIÈRE visible dans le carré (jamais recadrée) ;
 // fit="cover" = remplit le carré en rognant les bords.
+// size = nombre de px (carré fixe) OU chaîne CSS ("100%") pour un carré fluide qui
+// remplit son conteneur (utilisé par la fiche produit, cf. .bx-pm-img).
 function ProductVisual({ p, size=138, accent=C.cobalt, radius=14, fit="contain" }) {
   const [failed, setFailed] = useState(false);
   const url = p.images?.[0]?.url;
+  const fluid = typeof size !== "number";
+  const box = fluid ? { width:size, aspectRatio:"1 / 1" } : { width:size, height:size };
   useEffect(() => { setFailed(false); }, [url]); // réinitialise si le produit/URL change
   if (url && !failed) {
     // alt = nom du produit (accessibilité/SEO) ; onError → repli sur l'illustration SVG si l'URL est morte.
-    return <img src={url} alt={p.fr || p.en || p.ar || ""} loading="lazy" onError={()=>setFailed(true)} style={{width:size,height:size,maxWidth:"100%",objectFit:fit,borderRadius:radius,display:"block"}}/>;
+    return <img src={url} alt={p.fr || p.en || p.ar || ""} loading="lazy" onError={()=>setFailed(true)} style={{...box,maxWidth:"100%",objectFit:fit,borderRadius:radius,display:"block"}}/>;
   }
+  // En fluide, le wrapper donne une hauteur définie au SVG (sinon height:100% est circulaire).
+  if (fluid) return <div style={{...box,maxWidth:"100%"}}><ProductArt variant={catArt(p.cat)} accent={accent} size="100%"/></div>;
   return <ProductArt variant={catArt(p.cat)} accent={accent} size={size}/>;
 }
 
